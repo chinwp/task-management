@@ -24,4 +24,3 @@ export async function toggleTask(id: string): Promise<void> {
 export async function deleteTask(id: string): Promise<void> {
   await sql`DELETE FROM tasks WHERE id = ${id}`;
 }
-
