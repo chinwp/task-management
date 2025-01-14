@@ -1,6 +1,6 @@
 'use server'
 
-import { kv } from '@vercel/kv'
+import { sql } from '@vercel/postgres';
 
 interface Task {
   id: string
@@ -9,33 +9,19 @@ interface Task {
 }
 
 export async function getTasks(): Promise<Task[]> {
-  const tasks = await kv.get<Task[]>('tasks') || []
-  return tasks
+  const { rows } = await sql`SELECT * FROM tasks ORDER BY id DESC`;
+  return rows as Task[];
 }
 
 export async function addTask(name: string): Promise<void> {
-  const tasks = await getTasks()
-  const newTask: Task = {
-    id: Date.now().toString(),
-    name,
-    completed: false,
-  }
-  tasks.push(newTask)
-  await kv.set('tasks', tasks)
+  await sql`INSERT INTO tasks (name, completed) VALUES (${name}, false)`;
 }
 
 export async function toggleTask(id: string): Promise<void> {
-  const tasks = await getTasks()
-  const task = tasks.find((t) => t.id === id)
-  if (task) {
-    task.completed = !task.completed
-    await kv.set('tasks', tasks)
-  }
+  await sql`UPDATE tasks SET completed = NOT completed WHERE id = ${id}`;
 }
 
 export async function deleteTask(id: string): Promise<void> {
-  const tasks = await getTasks()
-  const updatedTasks = tasks.filter((t) => t.id !== id)
-  await kv.set('tasks', updatedTasks)
+  await sql`DELETE FROM tasks WHERE id = ${id}`;
 }
 
